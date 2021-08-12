@@ -1,7 +1,7 @@
 import React, { useReducer } from 'react';
 import Header from './components/Header';
 import { withStyles } from '@material-ui/core/styles';
-import { reducer } from './utils/reducer';
+import { ACTION, createAction, reducer, initialState } from './utils/reducer';
 import { Paper, Button } from '@material-ui/core';
 
 const styles = () => ({
@@ -26,15 +26,17 @@ const styles = () => ({
   },
 });
 
-const initialState = {
-  price: 0,
-  products: ['A', 'B', 'C'],
-  promotions: [],
-  cart: [],
-};
-
 const Main = ({ classes }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
+
+  const addToCart = (product) => {
+    dispatch(createAction(ACTION.ADD_TO_CART, product));
+  };
+
+  const removeFromCart = (productIndex) => {
+    dispatch(createAction(ACTION.REMOVE_FROM_CART, productIndex));
+  };
+
   return (
     <div className={classes.main}>
       <Header title='Promotion Engine' />
@@ -42,11 +44,13 @@ const Main = ({ classes }) => {
         <div className={classes.line}>
           <div>
             Products:{' '}
-            {state.products.map((p) => (
+            {state.products.map((p, index) => (
               <Button
+                key={index}
                 variant='contained'
                 size='small'
                 className={classes.product}
+                onClick={() => addToCart(p)}
               >
                 {p}
               </Button>
@@ -59,7 +63,20 @@ const Main = ({ classes }) => {
           <Button variant='outlined'>Add Promotion</Button>
         </div>
         <div className={classes.line}>
-          <div>Cart: </div>
+          <div>
+            Cart:{' '}
+            {state.cart.map((p, index) => (
+              <Button
+                key={index}
+                variant='contained'
+                size='small'
+                className={classes.product}
+                onClick={() => removeFromCart(index)}
+              >
+                {p}
+              </Button>
+            ))}
+          </div>
           <Button variant='outlined'>Clear Cart</Button>
         </div>
       </Paper>
