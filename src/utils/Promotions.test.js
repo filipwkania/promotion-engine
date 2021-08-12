@@ -19,4 +19,12 @@ describe('Promotions', () => {
     expect(promo.check(['A', 'C'])).toEqual(false);
     expect(promo.check([])).toEqual(false);
   });
+
+  it('should remove promotion products from cart', () => {
+    const cart = ['A', 'A', 'B'];
+    const promotion = new Promotion(['A', 'A'], 50);
+    const newCart = promotion.subtractFromCart(cart);
+
+    expect(newCart).toEqual(['B']);
+  });
 });

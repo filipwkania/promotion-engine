@@ -1,4 +1,4 @@
-import React, { useReducer } from 'react';
+import React, { useEffect, useReducer } from 'react';
 import Header from './components/Header';
 import { withStyles } from '@material-ui/core/styles';
 import { ACTION, createAction, reducer, initialState } from './utils/reducer';
@@ -19,15 +19,25 @@ const styles = () => ({
   line: {
     display: 'flex',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 16,
+    minHeight: 36,
   },
   product: {
     margin: '0 4px',
+  },
+  label: {
+    display: 'inline-block',
+    minWidth: 100,
   },
 });
 
 const Main = ({ classes }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
+
+  useEffect(() => {
+    dispatch(createAction(ACTION.UPDATE_PRICE));
+  }, [state.cart.length]);
 
   const addToCart = (product) => {
     dispatch(createAction(ACTION.ADD_TO_CART, product));
@@ -43,7 +53,7 @@ const Main = ({ classes }) => {
       <Paper className={classes.content}>
         <div className={classes.line}>
           <div>
-            Products:{' '}
+            <span className={classes.label}>Products: </span>
             {state.products.map((p, index) => (
               <Button
                 key={index}
@@ -59,12 +69,24 @@ const Main = ({ classes }) => {
           <Button variant='outlined'>Add Product</Button>
         </div>
         <div className={classes.line}>
-          <div>Promotions: </div>
+          <div>
+            <span className={classes.label}>Promotions: </span>
+            {state.promotions.map((p, index) => (
+              <Button
+                key={index}
+                variant='contained'
+                size='small'
+                className={classes.product}
+              >
+                {p.getLabel()}
+              </Button>
+            ))}
+          </div>
           <Button variant='outlined'>Add Promotion</Button>
         </div>
         <div className={classes.line}>
           <div>
-            Cart:{' '}
+            <span className={classes.label}>Cart: </span>
             {state.cart.map((p, index) => (
               <Button
                 key={index}
@@ -77,7 +99,11 @@ const Main = ({ classes }) => {
               </Button>
             ))}
           </div>
-          <Button variant='outlined'>Clear Cart</Button>
+        </div>
+        <div className={classes.line}>
+          <div>
+            <span className={classes.label}>Price: </span> {state.price}
+          </div>
         </div>
       </Paper>
     </div>

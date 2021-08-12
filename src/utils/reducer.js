@@ -10,11 +10,50 @@ export const ACTION = {
   UPDATE_PRICE: 6,
 };
 
+export const PRICES = {
+  A: 50,
+  B: 30,
+  C: 20,
+  D: 15,
+};
+
 export const initialState = {
   price: 0,
   products: ['A', 'B', 'C'],
-  promotions: [new Promotion([])],
+  promotions: [
+    new Promotion(['A', 'A', 'A'], 130),
+    new Promotion(['B', 'B'], 45),
+    new Promotion(['C', 'D'], 30),
+  ],
   cart: [],
+};
+
+export const calculatePrice = (cart, promotions) => {
+  let price = 0;
+  let tempCart = cart.slice();
+  let noPromsLeft;
+
+  while (tempCart.length > 0) {
+    noPromsLeft = true;
+
+    promotions.forEach((prom) => {
+      const promPrice = prom.check(tempCart);
+      if (promPrice) {
+        noPromsLeft = false;
+        price += promPrice;
+        tempCart = prom.subtractFromCart(tempCart);
+      }
+    });
+
+    if (noPromsLeft) {
+      tempCart.forEach((product) => {
+        price += PRICES[product];
+      });
+      tempCart = [];
+    }
+  }
+
+  return price;
 };
 
 export const addProduct = (state, product) => {};
@@ -23,7 +62,10 @@ export const addPromotion = (state, promotion) => {};
 
 export const calcPromotion = (state) => {};
 
-export const updatePrice = (state, price) => {};
+export const updatePrice = (state, price) =>
+  produce(state, (draft) => {
+    draft.price = calculatePrice(state.cart, state.promotions);
+  });
 
 export const addToCart = (state, product) =>
   produce(state, (draft) => {
