@@ -1,13 +1,12 @@
 import produce from 'immer';
-import Promotion from './Promotion';
+import Promotion from '../classes/Promotion';
+import Product from '../classes/Product';
+import Item from '../classes/Item';
 
 export const ACTION = {
-  ADD_PRODUCT: 1,
-  ADD_PROMOTION: 2,
-  ADD_TO_CART: 3,
-  REMOVE_FROM_CART: 4,
-  CALC_PROMOTION: 5,
-  UPDATE_PRICE: 6,
+  ADD_TO_CART: 1,
+  REMOVE_FROM_CART: 2,
+  UPDATE_PRICE: 3,
 };
 
 export const PRICES = {
@@ -17,64 +16,66 @@ export const PRICES = {
   D: 15,
 };
 
-export const initialState = {
+export const initState = () => ({
   price: 0,
-  products: ['A', 'B', 'C'],
+  products: [
+    new Product('A', PRICES['A']),
+    new Product('B', PRICES['B']),
+    new Product('C', PRICES['C']),
+    new Product('D', PRICES['D']),
+  ],
   promotions: [
-    new Promotion(['A', 'A', 'A'], 130),
-    new Promotion(['B', 'B'], 45),
-    new Promotion(['C', 'D'], 30),
+    new Promotion([new Item('A', 3)], 130),
+    new Promotion([new Item('B', 2)], 45),
+    new Promotion([new Item('C', 1), new Item('D', 1)], 30),
   ],
   cart: [],
-};
+  lastCartUpdate: 0,
+});
 
-export const calculatePrice = (cart, promotions) => {
+export const calculatePrice = (state) => {
   let price = 0;
-  let tempCart = cart.slice();
-  let noPromsLeft;
-
-  while (tempCart.length > 0) {
-    noPromsLeft = true;
-
-    promotions.forEach((prom) => {
-      const promPrice = prom.check(tempCart);
-      if (promPrice) {
-        noPromsLeft = false;
-        price += promPrice;
-        tempCart = prom.subtractFromCart(tempCart);
-      }
-    });
-
-    if (noPromsLeft) {
-      tempCart.forEach((product) => {
-        price += PRICES[product];
+  let noPromsLeft = false;
+  produce(state, (draft) => {
+    while (!noPromsLeft) {
+      noPromsLeft = true;
+      draft.promotions.forEach((prom) => {
+        const promPrice = prom.check(draft.cart);
+        if (promPrice) {
+          noPromsLeft = false;
+          price += promPrice;
+          draft.cart = prom.subtractFromCart(draft.cart);
+        }
       });
-      tempCart = [];
     }
-  }
 
+    draft.cart.forEach((p) => {
+      price += PRICES[p.SKU] * p.quantity;
+    });
+  });
   return price;
 };
 
-export const addProduct = (state, product) => {};
-
-export const addPromotion = (state, promotion) => {};
-
-export const calcPromotion = (state) => {};
-
-export const updatePrice = (state, price) =>
+export const updatePrice = (state) =>
   produce(state, (draft) => {
-    draft.price = calculatePrice(state.cart, state.promotions);
+    draft.price = calculatePrice(state);
   });
 
 export const addToCart = (state, product) =>
   produce(state, (draft) => {
-    draft.cart = [...state.cart, product];
+    const pIndex = state.cart.findIndex((p) => p.SKU === product.SKU);
+    if (state.cart[pIndex]) {
+      draft.cart[pIndex].quantity += 1;
+    } else {
+      draft.cart.push(new Item(product.SKU, 1));
+    }
+    draft.lastCartUpdate = Date.now();
   });
 
-export const removeFromCart = (state, productIndex) =>
+export const removeFromCart = (state, SKU) =>
   produce(state, (draft) => {
-    draft.cart.splice(productIndex, 1);
+    draft.cart = draft.cart.filter((p) => p.SKU !== SKU);
+    draft.lastCartUpdate = Date.now();
   });
 
 export const createAction = (type, payload) => ({
@@ -84,19 +85,13 @@ export const createAction = (type, payload) => ({
 
 export const reducer = (state, action) => {
   switch (action.type) {
-    case ACTION.ADD_PRODUCT:
-      return addProduct(state, action.payload);
     case ACTION.ADD_TO_CART:
       return addToCart(state, action.payload);
     case ACTION.REMOVE_FROM_CART:
       return removeFromCart(state, action.payload);
-    case ACTION.ADD_PROMOTION:
-      return addPromotion(state, action.payload);
-    case ACTION.CALC_PROMOTION:
-      return calcPromotion(state);
     case ACTION.UPDATE_PRICE:
-      return updatePrice(state, action.payload);
+      return updatePrice(state);
     default:
-      return false;
+      return state;
   }
 };

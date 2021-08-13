@@ -1,7 +1,7 @@
 import React, { useEffect, useReducer } from 'react';
 import Header from './components/Header';
 import { withStyles } from '@material-ui/core/styles';
-import { ACTION, createAction, reducer, initialState } from './utils/reducer';
+import { ACTION, createAction, reducer, initState } from './utils/reducer';
 import { Paper, Button } from '@material-ui/core';
 
 const styles = () => ({
@@ -19,7 +19,6 @@ const styles = () => ({
   line: {
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: 16,
     minHeight: 36,
   },
@@ -30,14 +29,23 @@ const styles = () => ({
     display: 'inline-block',
     minWidth: 100,
   },
+  left: {
+    display: 'flex',
+    alignItems: 'center',
+    height: 36,
+  },
 });
+
+const initialState = initState();
 
 const Main = ({ classes }) => {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   useEffect(() => {
-    dispatch(createAction(ACTION.UPDATE_PRICE));
-  }, [state.cart.length]);
+    if (state.lastCartUpdate) {
+      dispatch(createAction(ACTION.UPDATE_PRICE));
+    }
+  }, [state.lastCartUpdate]);
 
   const addToCart = (product) => {
     dispatch(createAction(ACTION.ADD_TO_CART, product));
@@ -47,12 +55,13 @@ const Main = ({ classes }) => {
     dispatch(createAction(ACTION.REMOVE_FROM_CART, productIndex));
   };
 
+  console.log(state);
   return (
     <div className={classes.main}>
       <Header title='Promotion Engine' />
       <Paper className={classes.content}>
         <div className={classes.line}>
-          <div>
+          <div className={classes.left}>
             <span className={classes.label}>Products: </span>
             {state.products.map((p, index) => (
               <Button
@@ -62,14 +71,13 @@ const Main = ({ classes }) => {
                 className={classes.product}
                 onClick={() => addToCart(p)}
               >
-                {p}
+                {p.SKU}
               </Button>
             ))}
           </div>
-          <Button variant='outlined'>Add Product</Button>
         </div>
         <div className={classes.line}>
-          <div>
+          <div className={classes.left}>
             <span className={classes.label}>Promotions: </span>
             {state.promotions.map((p, index) => (
               <Button
@@ -78,26 +86,27 @@ const Main = ({ classes }) => {
                 size='small'
                 className={classes.product}
               >
-                {p.getLabel()}
+                {p.label}
               </Button>
             ))}
           </div>
-          <Button variant='outlined'>Add Promotion</Button>
         </div>
         <div className={classes.line}>
-          <div>
+          <div className={classes.left}>
             <span className={classes.label}>Cart: </span>
-            {state.cart.map((p, index) => (
-              <Button
-                key={index}
-                variant='contained'
-                size='small'
-                className={classes.product}
-                onClick={() => removeFromCart(index)}
-              >
-                {p}
-              </Button>
-            ))}
+            {state.cart.map((p, index) =>
+              p.quantity > 0 ? (
+                <Button
+                  key={index}
+                  variant='contained'
+                  size='small'
+                  className={classes.product}
+                  onClick={() => removeFromCart(p.SKU)}
+                >
+                  {p.SKU} x {p.quantity}
+                </Button>
+              ) : null
+            )}
           </div>
         </div>
         <div className={classes.line}>
